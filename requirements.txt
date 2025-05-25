@@ -1,0 +1,8 @@
+asgiref
+coverage
+Django
+djangorestframework
+pytz
+sqlparse
+tzdata
+python-dotenv

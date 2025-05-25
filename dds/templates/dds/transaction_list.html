@@ -1,15 +1,15 @@
 {% extends 'dds/base.html' %}
-{% load static  %}
+{% load static %}
 {% block content %}
 <h2>Транзакции</h2>
 <a href="{% url 'transaction_create' %}" class="btn btn-primary mb-3">Создать транзакцию</a>
 <form method="get" class="mb-3">
     <div class="row">
-        <div class="col-md-3">
+        <div class="col-md-2">
             <label>Дата и время (от)</label>
             <input type="datetime-local" name="date_from" class="form-control" value="{{ request.GET.date_from }}">
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
             <label>Дата и время (до)</label>
             <input type="datetime-local" name="date_to" class="form-control" value="{{ request.GET.date_to }}">
         </div>
@@ -24,10 +24,28 @@
         </div>
         <div class="col-md-2">
             <label>Тип</label>
-            <select name="type" class="form-control">
+            <select name="type" class="form-control" id="id_type">
                 <option value="">Все типы</option>
                 {% for type in types %}
                 <option value="{{ type.id }}" {% if request.GET.type == type.id|stringformat:"s" %}selected{% endif %}>{{ type.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label>Категория</label>
+            <select name="category" class="form-control" id="id_category">
+                <option value="">Все категории</option>
+                {% for category in categories %}
+                <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>{{ category.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label>Подкатегория</label>
+            <select name="subcategory" class="form-control" id="id_subcategory">
+                <option value="">Все подкатегории</option>
+                {% for subcategory in subcategories %}
+                <option value="{{ subcategory.id }}" {% if request.GET.subcategory == subcategory.id|stringformat:"s" %}selected{% endif %}>{{ subcategory.name }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -61,10 +79,28 @@
             <td>{{ transaction.comment|default:"-" }}</td>
             <td>
                 <a href="{% url 'transaction_edit' transaction.id %}" class="btn btn-sm btn-warning">Редактировать</a>
-                <form action="{% url 'transaction_delete' transaction.id %}" method="post" style="display:inline;">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
-                </form>
+                <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ transaction.id }}">Удалить</button>
+                <!-- Modal -->
+                <div class="modal fade" id="deleteModal{{ transaction.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ transaction.id }}" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="deleteModalLabel{{ transaction.id }}">Подтверждение удаления</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                Вы уверены, что хотите удалить транзакцию от {{ transaction.date|date:"d M Y г. H:i" }} на сумму {{ transaction.amount|floatformat:2 }} ₽?
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                <form action="{% url 'transaction_delete' transaction.id %}" method="post" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger">Удалить</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </td>
         </tr>
         {% empty %}
@@ -72,4 +108,5 @@
         {% endfor %}
     </tbody>
 </table>
+<script src="{% static 'js/dynamic_form.js' %}"></script>
 {% endblock %}

@@ -1,48 +1,52 @@
-$(document).ready(function() {
-    // очищаем категории и подкатегории при загрузке
-    $('#id_category').empty().append('<option value="">Выберите категорию</option>');
-    $('#id_subcategory').empty().append('<option value="">Выберите подкатегорию</option>');
+document.addEventListener('DOMContentLoaded', () => {
+    // Очищаем категории и подкатегории при загрузке страницы
+    const categorySelect = document.getElementById('id_category');
+    const subcategorySelect = document.getElementById('id_subcategory');
+    categorySelect.innerHTML = '<option value="">Выберите категорию</option>';
+    subcategorySelect.innerHTML = '<option value="">Выберите подкатегорию</option>';
 
     // Обработка изменения типа
-    $('#id_type').change(function() {
-        var typeId = $(this).val();
-        $('#id_category').empty().append('<option value="">Выберите категорию</option>');
-        $('#id_subcategory').empty().append('<option value="">Выберите подкатегорию</option>');
+    document.getElementById('id_type').addEventListener('change', async (event) => {
+        const typeId = event.target.value;
+        categorySelect.innerHTML = '<option value="">Выберите категорию</option>';
+        subcategorySelect.innerHTML = '<option value="">Выберите подкатегорию</option>';
 
         if (typeId) {
-            $.ajax({
-                url: '/get_categories/',
-                data: { 'type_id': typeId },
-                success: function(data) {
-                    $.each(data.categories, function(index, category) {
-                        $('#id_category').append('<option value="' + category.id + '">' + category.name + '</option>');
-                    });
-                },
-                error: function() {
-                    alert('Ошибка загрузки категорий. Попробуйте обновить страницу.');
-                }
-            });
+            try {
+                const response = await fetch(`/get_categories/?type_id=${typeId}`);
+                if (!response.ok) throw new Error('Ошибка загрузки категорий');
+                const data = await response.json();
+                data.categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    categorySelect.appendChild(option);
+                });
+            } catch (error) {
+                alert('Ошибка загрузки категорий. Попробуйте обновить страницу.');
+            }
         }
     });
 
     // Обработка изменения категории
-    $('#id_category').change(function() {
-        var categoryId = $(this).val();
-        $('#id_subcategory').empty().append('<option value="">Выберите подкатегорию</option>');
+    categorySelect.addEventListener('change', async (event) => {
+        const categoryId = event.target.value;
+        subcategorySelect.innerHTML = '<option value="">Выберите подкатегорию</option>';
 
         if (categoryId) {
-            $.ajax({
-                url: '/get_subcategories/',
-                data: { 'category_id': categoryId },
-                success: function(data) {
-                    $.each(data.subcategories, function(index, subcategory) {
-                        $('#id_subcategory').append('<option value="' + subcategory.id + '">' + subcategory.name + '</option>');
-                    });
-                },
-                error: function() {
-                    alert('Ошибка загрузки подкатегорий. Попробуйте обновить страницу.');
-                }
-            });
+            try {
+                const response = await fetch(`/get_subcategories/?category_id=${categoryId}`);
+                if (!response.ok) throw new Error('Ошибка загрузки подкатегорий');
+                const data = await response.json();
+                data.subcategories.forEach(subcategory => {
+                    const option = document.createElement('option');
+                    option.value = subcategory.id;
+                    option.textContent = subcategory.name;
+                    subcategorySelect.appendChild(option);
+                });
+            } catch (error) {
+                alert('Ошибка загрузки подкатегорий. Попробуйте обновить страницу.');
+            }
         }
     });
 });

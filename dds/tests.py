@@ -6,7 +6,6 @@ from .forms import TransactionForm, StatusForm, TypeForm, CategoryForm, Subcateg
 from datetime import datetime
 import json
 
-
 class ModelTests(TestCase):
     def setUp(self):
         self.status = Status.objects.create(name="Бизнес")
@@ -38,8 +37,6 @@ class ModelTests(TestCase):
         )
         expected_str = f"2025-05-24 14:30 - 5000.00 (Списание)"
         self.assertEqual(str(transaction), expected_str)
-
-
 
     def test_transaction_creation(self):
         transaction = Transaction.objects.create(
@@ -163,7 +160,9 @@ class ViewTests(TestCase):
             'date_from': timezone.make_aware(datetime(2025, 5, 24, 14, 0)).strftime('%Y-%m-%dT%H:%M'),
             'date_to': timezone.make_aware(datetime(2025, 5, 24, 15, 0)).strftime('%Y-%m-%dT%H:%M'),
             'status': self.status.id,
-            'type': self.type.id
+            'type': self.type.id,
+            'category': self.category.id,
+            'subcategory': self.subcategory.id
         })
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Оплата сервера")
@@ -191,7 +190,7 @@ class ViewTests(TestCase):
             'date_to': timezone.make_aware(datetime(2025, 5, 24, 15, 0)).strftime('%Y-%m-%dT%H:%M')
         })
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Оплата сервера")  # Фильтр игнорирует некорректную дату
+        self.assertContains(response, "Некорректный формат даты")
 
     def test_transaction_create_view_get(self):
         response = self.client.get(reverse('transaction_create'))
@@ -305,8 +304,8 @@ class ViewTests(TestCase):
     def test_reference_management_view_post_status_invalid(self):
         form_data = {'status-name': '', 'status_submit': '1'}
         response = self.client.post(reverse('reference_management'), form_data)
-        self.assertEqual(response.status_code, 200)  # Остаётся на той же странице
-        self.assertContains(response, "Обязательное поле")  # Проверка ошибки формы
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Обязательное поле")
 
     def test_reference_management_view_post_type_invalid(self):
         form_data = {'type-name': '', 'type_submit': '1'}
@@ -325,6 +324,74 @@ class ViewTests(TestCase):
         response = self.client.post(reverse('reference_management'), form_data)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Обязательное поле")
+
+    def test_status_edit_view_get(self):
+        response = self.client.get(reverse('status_edit', args=[self.status.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'dds/reference_form.html')
+
+    def test_status_edit_view_post(self):
+        form_data = {'name': 'Личное'}
+        response = self.client.post(reverse('status_edit', args=[self.status.id]), form_data)
+        self.assertEqual(response.status_code, 302)
+        self.status.refresh_from_db()
+        self.assertEqual(self.status.name, "Личное")
+
+    def test_status_delete_view(self):
+        response = self.client.post(reverse('status_delete', args=[self.status.id]))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Status.objects.count(), 0)
+
+    def test_type_edit_view_get(self):
+        response = self.client.get(reverse('type_edit', args=[self.type.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'dds/reference_form.html')
+
+    def test_type_edit_view_post(self):
+        form_data = {'name': 'Пополнение'}
+        response = self.client.post(reverse('type_edit', args=[self.type.id]), form_data)
+        self.assertEqual(response.status_code, 302)
+        self.type.refresh_from_db()
+        self.assertEqual(self.type.name, "Пополнение")
+
+    def test_type_delete_view(self):
+        response = self.client.post(reverse('type_delete', args=[self.type.id]))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Type.objects.count(), 0)
+
+    def test_category_edit_view_get(self):
+        response = self.client.get(reverse('category_edit', args=[self.category.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'dds/reference_form.html')
+
+    def test_category_edit_view_post(self):
+        form_data = {'name': 'Маркетинг', 'type': self.type.id}
+        response = self.client.post(reverse('category_edit', args=[self.category.id]), form_data)
+        self.assertEqual(response.status_code, 302)
+        self.category.refresh_from_db()
+        self.assertEqual(self.category.name, "Маркетинг")
+
+    def test_category_delete_view(self):
+        response = self.client.post(reverse('category_delete', args=[self.category.id]))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Category.objects.count(), 0)
+
+    def test_subcategory_edit_view_get(self):
+        response = self.client.get(reverse('subcategory_edit', args=[self.subcategory.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'dds/reference_form.html')
+
+    def test_subcategory_edit_view_post(self):
+        form_data = {'name': 'Proxy', 'category': self.category.id}
+        response = self.client.post(reverse('subcategory_edit', args=[self.subcategory.id]), form_data)
+        self.assertEqual(response.status_code, 302)
+        self.subcategory.refresh_from_db()
+        self.assertEqual(self.subcategory.name, "Proxy")
+
+    def test_subcategory_delete_view(self):
+        response = self.client.post(reverse('subcategory_delete', args=[self.subcategory.id]))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Subcategory.objects.count(), 0)
 
     def test_get_categories_view(self):
         response = self.client.get(reverse('get_categories'), {'type_id': self.type.id})
@@ -351,3 +418,17 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         self.assertEqual(len(data['subcategories']), 0)
+
+    def test_api_categories_view(self):
+        response = self.client.get(reverse('api_categories'), {'type_id': self.type.id})
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.content)
+        self.assertEqual(len(data['categories']), 1)
+        self.assertEqual(data['categories'][0]['name'], "Инфраструктура")
+
+    def test_api_subcategories_view(self):
+        response = self.client.get(reverse('api_subcategories'), {'category_id': self.category.id})
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.content)
+        self.assertEqual(len(data['subcategories']), 1)
+        self.assertEqual(data['subcategories'][0]['name'], "VPS")
