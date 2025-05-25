@@ -1,0 +1,61 @@
+{% extends 'dds/base.html' %}
+{% load static %}
+{% block content %}
+<h2>Управление справочниками</h2>
+<div class="row">
+    <div class="col-md-6">
+        <h3>Статусы</h3>
+        <form method="post" class="mb-3">
+            {% csrf_token %}
+            {{ status_form.as_p }}
+            <button type="submit" name="status_submit" value="1" class="btn btn-primary">Добавить статус</button>
+        </form>
+        <ul>
+            {% for status in statuses %}
+            <li>{{ status.name }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="col-md-6">
+        <h3>Типы</h3>
+        <form method="post" class="mb-3">
+            {% csrf_token %}
+            {{ type_form.as_p }}
+            <button type="submit" name="type_submit" value="1" class="btn btn-primary">Добавить тип</button>
+        </form>
+        <ul>
+            {% for type in types %}
+            <li>{{ type.name }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <h3>Категории</h3>
+        <form method="post" class="mb-3">
+            {% csrf_token %}
+            {{ category_form.as_p }}
+            <button type="submit" name="category_submit" value="1" class="btn btn-primary">Добавить категорию</button>
+        </form>
+        <ul>
+            {% for category in categories %}
+            <li>{{ category.name }} (Тип: {{ category.type.name }})</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="col-md-6">
+        <h3>Подкатегории</h3>
+        <form method="post" class="mb-3">
+            {% csrf_token %}
+            {{ subcategory_form.as_p }}
+            <button type="submit" name="subcategory_submit" value="1" class="btn btn-primary">Добавить подкатегорию</button>
+        </form>
+        <ul>
+            {% for subcategory in subcategories %}
+            <li>{{ subcategory.name }} (Категория: {{ subcategory.category.name }})</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}
